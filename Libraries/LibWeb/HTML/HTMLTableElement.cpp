@@ -118,7 +118,7 @@ void HTMLTableElement::apply_presentational_hints(GC::Ref<CSS::CascadedPropertie
                 auto legacy_line_style = CSS::CSSKeywordValue::create(CSS::Keyword::Outset);
                 cascaded_properties->set_property_from_presentational_hint(style_property, legacy_line_style);
                 cascaded_properties->set_property_from_presentational_hint(width_property, CSS::LengthStyleValue::create(CSS::Length::make_px(border)));
-                cascaded_properties->set_property_from_presentational_hint(color_property, CSS::CSSColorValue::create_from_color(Color(128, 128, 128), CSS::ColorSyntax::Legacy));
+                cascaded_properties->set_property_from_presentational_hint(color_property, CSS::CSSColorValue::create_from_color(Color::from_rgb(128, 128, 128), CSS::ColorSyntax::Legacy));
             };
             apply_border_style(CSS::PropertyID::BorderLeftStyle, CSS::PropertyID::BorderLeftWidth, CSS::PropertyID::BorderLeftColor);
             apply_border_style(CSS::PropertyID::BorderTopStyle, CSS::PropertyID::BorderTopWidth, CSS::PropertyID::BorderTopColor);

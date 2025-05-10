@@ -386,7 +386,7 @@ ErrorOr<NonnullOwnPtr<AnimationWriter>> WebPWriter::start_encoding_animation(See
         TRY(align_to_two(stream));
     }
 
-    TRY(write_ANIM_chunk(stream, { .background_color = background_color.value(), .loop_count = static_cast<u16>(loop_count) }));
+    TRY(write_ANIM_chunk(stream, { .background_color = background_color.to_rgba(), .loop_count = static_cast<u16>(loop_count) }));
 
     auto writer = make<WebPAnimationWriter>(stream, dimensions, vp8x_flags_from_header(vp8x_header), options.vp8l_options);
     TRY(writer->update_size_in_header());

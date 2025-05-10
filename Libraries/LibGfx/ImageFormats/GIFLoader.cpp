@@ -124,13 +124,13 @@ static void clear_rect(Bitmap& bitmap, IntRect const& rect, Color color)
     if (intersection_rect.is_empty())
         return;
 
-    ARGB32* dst = bitmap.scanline(intersection_rect.top()) + intersection_rect.left();
-    size_t const dst_skip = bitmap.pitch() / sizeof(ARGB32);
+    u32* dst = bitmap.scanline(intersection_rect.top()) + intersection_rect.left();
+    size_t const dst_skip = bitmap.pitch() / sizeof(u32);
 
-    auto const value = color.value();
+    auto const value = color.to_rgba();
     auto const width = intersection_rect.width();
     for (int i = intersection_rect.height() - 1; i >= 0; --i) {
-        for (ARGB32* p = dst; p < (dst + width); ++p) {
+        for (u32* p = dst; p < (dst + width); ++p) {
             *p = value;
         }
         dst += dst_skip;
@@ -261,7 +261,7 @@ static ErrorOr<void> load_header_and_logical_screen(GIFLoadingContext& context)
             u8 r = TRY(context.stream.read_value<u8>());
             u8 g = TRY(context.stream.read_value<u8>());
             u8 b = TRY(context.stream.read_value<u8>());
-            context.logical_screen.color_map[i] = { r, g, b };
+            context.logical_screen.color_map[i] = Color::from_rgb(r, g, b);
         }
     }
 
@@ -355,7 +355,7 @@ static ErrorOr<void> load_gif_frame_descriptors(GIFLoadingContext& context)
                     u8 r = TRY(context.stream.read_value<u8>());
                     u8 g = TRY(context.stream.read_value<u8>());
                     u8 b = TRY(context.stream.read_value<u8>());
-                    image->color_map[i] = { r, g, b };
+                    image->color_map[i] = Color::from_rgb(r, g, b);
                 }
             }
 

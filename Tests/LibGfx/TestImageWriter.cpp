@@ -78,7 +78,7 @@ static ErrorOr<AK::NonnullRefPtr<Gfx::Bitmap>> create_test_rgb_bitmap()
 
     for (int y = 0; y < bitmap->height(); ++y)
         for (int x = 0; x < bitmap->width(); ++x)
-            bitmap->set_pixel(x, y, Gfx::Color((x * 255) / bitmap->width(), (y * 255) / bitmap->height(), x + y));
+            bitmap->set_pixel(x, y, Gfx::Color::from_rgb((x * 255) / bitmap->width(), (y * 255) / bitmap->height(), x + y));
 
     return bitmap;
 }
@@ -223,7 +223,7 @@ TEST_CASE(test_webp_incremental_animation)
     auto rgb_bitmap_2 = TRY_OR_FAIL(create_test_rgb_bitmap());
 
     // WebP frames can't be at odd coordinates. Make a pixel at an odd coordinate different to make sure we handle this.
-    rgb_bitmap_2->scanline(3)[3] = Gfx::Color(Color::Red).value();
+    rgb_bitmap_2->scanline(3)[3] = Gfx::Color(Color::Red).to_rgba();
 
     // 20 kiB is enough for two 47x33 frames.
     auto stream_buffer = TRY_OR_FAIL(ByteBuffer::create_uninitialized(20 * 1024));

@@ -22,7 +22,7 @@ Color CSSHWB::to_color(Optional<Layout::NodeWithStyle const&>) const
             return round_to<u8>(clamp(value * 255.0f, 0.0f, 255.0f));
         };
         u8 gray = to_byte(w_val / (w_val + b_val));
-        return Color(gray, gray, gray, to_byte(alpha_val));
+        return Color::from_rgba(gray, gray, gray, to_byte(alpha_val));
     }
 
     auto value = 1 - b_val;

@@ -241,13 +241,13 @@ Tab::Tab(BrowserWindow* window, RefPtr<WebView::WebContentClient> parent_client,
         dialog.setWindowTitle("Ladybird");
         dialog.setOption(QColorDialog::ShowAlphaChannel, false);
         QObject::connect(&dialog, &QColorDialog::currentColorChanged, this, [this](QColor const& color) {
-            view().color_picker_update(Color(color.red(), color.green(), color.blue()), Web::HTML::ColorPickerUpdateState::Update);
+            view().color_picker_update(Color::from_rgb(color.red(), color.green(), color.blue()), Web::HTML::ColorPickerUpdateState::Update);
         });
 
         QObject::connect(m_dialog, &QDialog::finished, this, [this](auto result) {
             if (result == QDialog::Accepted) {
                 auto& dialog = static_cast<QColorDialog&>(*m_dialog);
-                view().color_picker_update(Color(dialog.selectedColor().red(), dialog.selectedColor().green(), dialog.selectedColor().blue()), Web::HTML::ColorPickerUpdateState::Closed);
+                view().color_picker_update(Color::from_rgb(dialog.selectedColor().red(), dialog.selectedColor().green(), dialog.selectedColor().blue()), Web::HTML::ColorPickerUpdateState::Closed);
             } else {
                 view().color_picker_update({}, Web::HTML::ColorPickerUpdateState::Closed);
             }

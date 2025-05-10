@@ -57,7 +57,7 @@ Color CSSRGB::to_color(Optional<Layout::NodeWithStyle const&>) const
     u8 const b_val = resolve_rgb_to_u8(m_properties.b).value_or(0);
     u8 const alpha_val = resolve_alpha_to_u8(m_properties.alpha).value_or(255);
 
-    return Color(r_val, g_val, b_val, alpha_val);
+    return Color::from_rgba(r_val, g_val, b_val, alpha_val);
 }
 
 bool CSSRGB::equals(CSSStyleValue const& other) const

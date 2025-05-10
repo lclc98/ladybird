@@ -149,11 +149,11 @@ ErrorOr<Core::AnonymousBuffer> load_system_theme(Core::ConfigFile const& file, O
         ENCODE_PATH(ColorScheme, true);
 
 #undef __ENUMERATE_COLOR_ROLE
-#define __ENUMERATE_COLOR_ROLE(role)                                    \
-    {                                                                   \
-        Optional<Color> result = get_color(#role);                      \
-        if (result.has_value())                                         \
-            data->color[(int)ColorRole::role] = result.value().value(); \
+#define __ENUMERATE_COLOR_ROLE(role)                                      \
+    {                                                                     \
+        Optional<Color> result = get_color(#role);                        \
+        if (result.has_value())                                           \
+            data->color[(int)ColorRole::role] = result.value().to_rgba(); \
     }
     ENUMERATE_COLOR_ROLES(__ENUMERATE_COLOR_ROLE)
 #undef __ENUMERATE_COLOR_ROLE

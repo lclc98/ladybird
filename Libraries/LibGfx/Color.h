@@ -17,8 +17,6 @@
 
 namespace Gfx {
 
-typedef u32 ARGB32;
-
 enum class AlphaType {
     Premultiplied,
     Unpremultiplied,
@@ -52,8 +50,27 @@ struct Oklab {
     float b { 0 };
 };
 
+constexpr auto srgb_to_linear = [](float c) {
+    return c >= 0.04045f ? pow((c + 0.055f) / 1.055f, 2.4f) : c / 12.92f;
+};
+
+constexpr auto linear_to_srgb = [](float c) {
+    if (c <= 0.04045 / 12.92)
+        return std::round(c * 12.92 * 255);
+    return std::round((pow(c, 10. / 24) * 1.055 - 0.055) * 255);
+};
+
 class Color {
 public:
+    enum class CSSColorFormat {
+        RGB,
+        RGBA,
+        HSL,
+        HSLA,
+        SRGB,
+        SRGBA,
+        OKLAB
+    };
     enum class NamedColor {
         Transparent,
         Black,
@@ -127,42 +144,111 @@ public:
     constexpr Color() = default;
     constexpr Color(NamedColor);
 
-    constexpr Color(u8 r, u8 g, u8 b)
-        : m_value(0xff000000 | (r << 16) | (g << 8) | b)
-    {
-    }
-
-    constexpr Color(u8 r, u8 g, u8 b, u8 a)
-        : m_value((a << 24) | (r << 16) | (g << 8) | b)
-    {
-    }
-
     static constexpr Color branded_color(BrandedColor);
 
-    static constexpr Color from_rgb(unsigned rgb) { return Color(rgb | 0xff000000); }
-    static constexpr Color from_argb(unsigned argb) { return Color(argb); }
+    static constexpr Color from_rgb(u8 r, u8 g, u8 b)
+    {
+        f32 const red = srgb_to_linear(r / 255.f);
+        f32 const green = srgb_to_linear(g / 255.f);
+        f32 const blue = srgb_to_linear(b / 255.f);
+
+        return Color(red, green, blue, 1.0f, CSSColorFormat::RGB);
+    }
+
+    static constexpr Color from_rgba(u8 r, u8 g, u8 b, u8 a)
+    {
+        f32 const red = srgb_to_linear(r / 255.f);
+        f32 const green = srgb_to_linear(g / 255.f);
+        f32 const blue = srgb_to_linear(b / 255.f);
+        f32 const alpha = a / 255.f;
+        return Color(red, green, blue, alpha, CSSColorFormat::RGBA);
+    }
+
+    static constexpr Color from_rgb(unsigned rgb)
+    {
+        unsigned r = (rgb >> 16) & 0xff;
+        unsigned g = (rgb >> 8) & 0xff;
+        unsigned b = rgb & 0xff;
+
+        f32 const red = srgb_to_linear(r / 255.f);
+        f32 const green = srgb_to_linear(g / 255.f);
+        f32 const blue = srgb_to_linear(b / 255.f);
+
+        return Color(red, green, blue, 1.0f, CSSColorFormat::RGB);
+    }
+
+    static constexpr Color from_argb(unsigned argb)
+    {
+        // argb to rgba linear
+        // fetch the red, green and blue components
+        unsigned r = (argb >> 16) & 0xff;
+        unsigned g = (argb >> 8) & 0xff;
+        unsigned b = argb & 0xff;
+        unsigned a = (argb >> 24) & 0xff;
+        // convert to linear
+        f32 const red = srgb_to_linear(r / 255.f);
+        f32 const green = srgb_to_linear(g / 255.f);
+        f32 const blue = srgb_to_linear(b / 255.f);
+        f32 const alpha = a / 255.f;
+        return Color(red, green, blue, alpha, CSSColorFormat::RGB);
+    }
+
     static constexpr Color from_abgr(unsigned abgr)
     {
-        unsigned argb = (abgr & 0xff00ff00) | ((abgr & 0xff0000) >> 16) | ((abgr & 0xff) << 16);
+        unsigned const argb = (abgr & 0xff00ff00) | ((abgr & 0xff0000) >> 16) | ((abgr & 0xff) << 16);
         return Color::from_argb(argb);
     }
+
     static constexpr Color from_bgr(unsigned bgr) { return Color::from_abgr(bgr | 0xff000000); }
 
     static constexpr Color from_yuv(YUV const& yuv) { return from_yuv(yuv.y, yuv.u, yuv.v); }
+
     static constexpr Color from_yuv(float y, float u, float v)
     {
         // https://www.itu.int/rec/R-REC-BT.1700-0-200502-I/en Table 4, Items 8 and 9 arithmetically inverted
         float r = y + v / 0.877f;
         float b = y + u / 0.493f;
         float g = (y - 0.299f * r - 0.114f * b) / 0.587f;
-        r = clamp(r, 0.0f, 1.0f);
-        g = clamp(g, 0.0f, 1.0f);
-        b = clamp(b, 0.0f, 1.0f);
+        r = srgb_to_linear(clamp(r, 0.0f, 1.0f));
+        g = srgb_to_linear(clamp(g, 0.0f, 1.0f));
+        b = srgb_to_linear(clamp(b, 0.0f, 1.0f));
 
-        return { static_cast<u8>(floorf(r * 255.0f)), static_cast<u8>(floorf(g * 255.0f)), static_cast<u8>(floorf(b * 255.0f)) };
+        return Color(r, g, b, 1.0f, CSSColorFormat::RGB);
     }
 
     // https://www.itu.int/rec/R-REC-BT.1700-0-200502-I/en Table 4
+
+    constexpr u32 to_rgb()
+    {
+        auto linear_to_srgb = [](float c) {
+            if (c <= 0.04045 / 12.92)
+                return c * 12.92;
+            return pow(c, 10. / 24) * 1.055 - 0.055;
+        };
+
+        double r = linear_to_srgb(red()) * 255.f;
+        double g = linear_to_srgb(green()) * 255.f;
+        double b = linear_to_srgb(blue()) * 255.f;
+
+        return (clamp(lroundf(b), 0, 255) << 16) | (clamp(lroundf(g), 0, 255) << 8) | clamp(lroundf(r), 0, 255);
+    }
+
+    constexpr u32 to_rgba()
+    {
+        auto linear_to_srgb = [](float c) {
+            if (c <= 0.04045 / 12.92)
+                return c * 12.92;
+            return pow(c, 10. / 24) * 1.055 - 0.055;
+        };
+
+        double r = linear_to_srgb(red()) * 255.f;
+        double g = linear_to_srgb(green()) * 255.f;
+        double b = linear_to_srgb(blue()) * 255.f;
+        int a = clamp(lroundf(alpha() * 255.f), 0, 255);
+
+        return (a << 24) | (clamp(lroundf(b), 0, 255) << 16) | (clamp(lroundf(g), 0, 255) << 8) | clamp(lroundf(r), 0, 255);
+    }
+
     constexpr YUV to_yuv() const
     {
         float r = red() / 255.0f;
@@ -179,18 +265,14 @@ public:
         return { y, u, v };
     }
 
-    static constexpr Color from_hsl(float h_degrees, float s, float l) { return from_hsla(h_degrees, s, l, 1.0); }
-    static constexpr Color from_hsla(float h_degrees, float s, float l, float a)
+    static constexpr Color from_hsl(float h_degrees, float s, float l) { return from_hsla(h_degrees, s, l, 1.0, CSSColorFormat::HSL); }
+
+    static constexpr Color from_hsla(float hue, float sat, float light, float a, CSSColorFormat color_format = CSSColorFormat::HSLA)
     {
         // Algorithm from https://www.w3.org/TR/css-color-3/#hsl-color
 
-        float h = fmodf(h_degrees, 360.0f);
-        if (h < 0.0)
-            h += 360.0f;
-
-        s = clamp(s, 0.0f, 1.0f);
-        l = clamp(l, 0.0f, 1.0f);
-        a = clamp(a, 0.0f, 1.0f);
+        sat = clamp(sat, 0.0f, 1.0f);
+        light = clamp(light, 0.0f, 1.0f);
 
         auto to_rgb = [](float h, float s, float l, float offset) {
             float k = fmodf(offset + h / 30.0f, 12.0f);
@@ -198,20 +280,22 @@ public:
             return l - a * max(-1.0f, min(min(k - 3.0f, 9.0f - k), 1.0f));
         };
 
-        float r = to_rgb(h, s, l, 0.0f);
-        float g = to_rgb(h, s, l, 8.0f);
-        float b = to_rgb(h, s, l, 4.0f);
+        float r = to_rgb(hue, sat, light, 0.0f);
+        float g = to_rgb(hue, sat, light, 8.0f);
+        float b = to_rgb(hue, sat, light, 4.0f);
 
-        u8 r_u8 = clamp(lroundf(r * 255.0f), 0, 255);
-        u8 g_u8 = clamp(lroundf(g * 255.0f), 0, 255);
-        u8 b_u8 = clamp(lroundf(b * 255.0f), 0, 255);
-        u8 a_u8 = clamp(lroundf(a * 255.0f), 0, 255);
-        return Color(r_u8, g_u8, b_u8, a_u8);
+        f32 red = srgb_to_linear(r);
+        f32 green = srgb_to_linear(g);
+        f32 blue = srgb_to_linear(b);
+        return Color(red, green, blue, a, color_format);
     }
 
     static Color from_a98rgb(float r, float g, float b, float alpha = 1.0f);
+
     static Color from_display_p3(float r, float g, float b, float alpha = 1.0f);
+
     static Color from_lab(float L, float a, float b, float alpha = 1.0f);
+
     static Color from_linear_srgb(float r, float g, float b, float alpha = 1.0f);
     static Color from_pro_photo_rgb(float r, float g, float b, float alpha = 1.0f);
     static Color from_rec2020(float r, float g, float b, float alpha = 1.0f);
@@ -258,71 +342,94 @@ public:
         };
     }
 
-    constexpr u8 red() const { return (m_value >> 16) & 0xff; }
-    constexpr u8 green() const { return (m_value >> 8) & 0xff; }
-    constexpr u8 blue() const { return m_value & 0xff; }
-    constexpr u8 alpha() const { return (m_value >> 24) & 0xff; }
-
-    constexpr void set_alpha(u8 value, AlphaType alpha_type = AlphaType::Unpremultiplied)
+    constexpr f32 red() const
     {
-        switch (alpha_type) {
-        case AlphaType::Premultiplied:
-            m_value = value << 24
-                | (red() * value / 255) << 16
-                | (green() * value / 255) << 8
-                | blue() * value / 255;
-            break;
-        case AlphaType::Unpremultiplied:
-            m_value = (m_value & 0x00ffffff) | value << 24;
-            break;
-        default:
-            VERIFY_NOT_REACHED();
+        if (m_format == Color::CSSColorFormat::RGBA || m_format == Color::CSSColorFormat::RGB || m_format == Color::CSSColorFormat::HSL || m_format == Color::CSSColorFormat::HSLA) {
+            return linear_to_srgb(m_r);
         }
+        return m_r;
+    }
+    constexpr f32 green() const
+    {
+        if (m_format == Color::CSSColorFormat::RGBA || m_format == Color::CSSColorFormat::RGB || m_format == Color::CSSColorFormat::HSL || m_format == Color::CSSColorFormat::HSLA) {
+            return linear_to_srgb(m_g);
+        }
+        return m_g;
+    }
+    constexpr f32 blue() const
+    {
+        if (m_format == Color::CSSColorFormat::RGBA || m_format == Color::CSSColorFormat::RGB || m_format == Color::CSSColorFormat::HSL || m_format == Color::CSSColorFormat::HSLA) {
+            return linear_to_srgb(m_b);
+        }
+        return m_b;
+    }
+    constexpr f32 alpha() const
+    {
+        return m_a;
     }
 
-    constexpr void set_red(u8 value)
+    constexpr void set_alpha([[maybe_unused]] u8 value, [[maybe_unused]] AlphaType alpha_type = AlphaType::Unpremultiplied)
     {
-        m_value &= 0xff00ffff;
-        m_value |= value << 16;
+
+        // TODO FIX
+        //  switch (alpha_type) {
+        //  case AlphaType::Premultiplied:
+        //      m_value = value << 24
+        //          | (red() * value / 255) << 16
+        //          | (green() * value / 255) << 8
+        //          | blue() * value / 255;
+        //      break;
+        //  case AlphaType::Unpremultiplied:
+        //      m_value = (m_value & 0x00ffffff) | value << 24;
+        //      break;
+        //  default:
+        //      VERIFY_NOT_REACHED();
+        //  }
     }
 
-    constexpr void set_green(u8 value)
+    constexpr void set_red(f32 value)
     {
-        m_value &= 0xffff00ff;
-        m_value |= value << 8;
+        m_r = value;
     }
 
-    constexpr void set_blue(u8 value)
+    constexpr void set_green(f32 value)
     {
-        m_value &= 0xffffff00;
-        m_value |= value;
+        m_g = value;
     }
 
-    constexpr Color with_alpha(u8 alpha, AlphaType alpha_type = AlphaType::Unpremultiplied) const
+    constexpr void set_blue(f32 value)
     {
-        Color color_with_alpha = Color(m_value);
-        color_with_alpha.set_alpha(alpha, alpha_type);
-        return color_with_alpha;
+        m_b = value;
+    }
+
+    constexpr Color with_alpha([[maybe_unused]] u8 alpha, [[maybe_unused]] AlphaType alpha_type = AlphaType::Unpremultiplied) const
+    {
+        return Color(0, 0, 0, 1, CSSColorFormat::RGB);
     }
 
     constexpr Color to_premultiplied() const
     {
+        // TODO FIX for different formats
         return Color(
             red() * alpha() / 255,
             green() * alpha() / 255,
             blue() * alpha() / 255,
-            alpha());
+            alpha(),
+            CSSColorFormat::RGB);
     }
 
     constexpr Color to_unpremultiplied() const
     {
         if (alpha() == 0 || alpha() == 255)
             return *this;
+
+        // TODO FIX for different formats
         return Color(
             red() * 255 / alpha(),
             green() * 255 / alpha(),
             blue() * 255 / alpha(),
-            alpha());
+            alpha(),
+            CSSColorFormat::RGB);
     }
 
     constexpr Color blend(Color source) const
@@ -338,7 +445,8 @@ public:
         u8 g = (green() * alpha() * (255 - source.alpha()) + source.green() * 255 * source.alpha()) / d;
         u8 b = (blue() * alpha() * (255 - source.alpha()) + source.blue() * 255 * source.alpha()) / d;
         u8 a = d / 255;
-        return Color(r, g, b, a);
+        // TODO FIX for different formats
+        return Color(r, g, b, a, CSSColorFormat::RGB);
     }
 
     ALWAYS_INLINE Color mixed_with(Color other, float weight) const
@@ -351,31 +459,30 @@ public:
         auto premultiplied_mix_channel = [&](float channel, float other_channel, float weight) {
             return round_to<u8>(mix<float>(channel * alpha(), other_channel * other.alpha(), weight) / mixed_alpha);
         };
-        return Gfx::Color {
+        return Color::from_rgba(
             premultiplied_mix_channel(red(), other.red(), weight),
             premultiplied_mix_channel(green(), other.green(), weight),
             premultiplied_mix_channel(blue(), other.blue(), weight),
-            round_to<u8>(mixed_alpha),
-        };
+            round_to<u8>(mixed_alpha));
     }
 
     ALWAYS_INLINE Color interpolate(Color other, float weight) const noexcept
     {
-        return Gfx::Color {
+        return Color::from_rgba(
             round_to<u8>(mix<float>(red(), other.red(), weight)),
             round_to<u8>(mix<float>(green(), other.green(), weight)),
             round_to<u8>(mix<float>(blue(), other.blue(), weight)),
-            round_to<u8>(mix<float>(alpha(), other.alpha(), weight)),
-        };
+            round_to<u8>(mix<float>(alpha(), other.alpha(), weight)));
     }
 
     constexpr Color multiply(Color other) const
     {
+        // TODO FIX for different formats
         return Color(
             red() * other.red() / 255,
             green() * other.green() / 255,
             blue() * other.blue() / 255,
-            alpha() * other.alpha() / 255);
+            alpha() * other.alpha() / 255, CSSColorFormat::RGB);
     }
 
     constexpr float distance_squared_to(Color other) const
@@ -405,7 +512,8 @@ public:
     constexpr Color to_grayscale() const
     {
         auto gray = luminosity();
-        return Color(gray, gray, gray, alpha());
+        // TODO FIX for different formats
+        return Color(gray, gray, gray, alpha(), CSSColorFormat::RGB);
     }
 
     constexpr Color sepia(float amount = 1.0f) const
@@ -428,11 +536,13 @@ public:
         auto g = green();
         auto b = blue();
 
+        // TODO FIX for different formats
         return Color(
             clamp(lroundf(r * r1 + g * r2 + b * r3), 0, 255),
             clamp(lroundf(r * g1 + g * g2 + b * g3), 0, 255),
             clamp(lroundf(r * b1 + g * b2 + b * b3), 0, 255),
-            alpha());
+            alpha(),
+            CSSColorFormat::RGB);
     }
 
     constexpr Color with_opacity(float opacity) const
@@ -443,12 +553,14 @@ public:
 
     constexpr Color darkened(float amount = 0.5f) const
     {
-        return Color(red() * amount, green() * amount, blue() * amount, alpha());
+        // TODO FIX for different formats
+        return Color(red() * amount, green() * amount, blue() * amount, alpha(), CSSColorFormat::RGB);
     }
 
     constexpr Color lightened(float amount = 1.2f) const
     {
-        return Color(min(255, (int)((float)red() * amount)), min(255, (int)((float)green() * amount)), min(255, (int)((float)blue() * amount)), alpha());
+        // TODO FIX for different formats
+        return Color(min(255, (int)((float)red() * amount)), min(255, (int)((float)green() * amount)), min(255, (int)((float)blue() * amount)), alpha(), CSSColorFormat::RGB);
     }
 
     Vector<Color> shades(u32 steps, float max = 1.f) const;
@@ -465,19 +577,13 @@ public:
 
     constexpr Color inverted() const
     {
-        return Color(~red(), ~green(), ~blue(), alpha());
+        // TODO FIX for different formats
+        return Color(1.0f - red(), 1.0f - green(), 1.0f - blue(), alpha(), CSSColorFormat::RGB);
     }
-
-    constexpr Color xored(Color other) const
-    {
-        return Color(((other.m_value ^ m_value) & 0x00ffffff) | (m_value & 0xff000000));
-    }
-
-    constexpr ARGB32 value() const { return m_value; }
 
     constexpr bool operator==(Color other) const
     {
-        return m_value == other.m_value;
+        return m_r == other.m_r && m_g == other.m_g && m_b == other.m_b && m_a == other.m_a;
     }
 
     enum class HTMLCompatibleSerialization {
@@ -590,7 +696,7 @@ public:
         auto out_r = static_cast<u8>(round(r * 255));
         auto out_g = static_cast<u8>(round(g * 255));
         auto out_b = static_cast<u8>(round(b * 255));
-        return Color(out_r, out_g, out_b);
+        return from_rgb(out_r, out_g, out_b);
     }
 
     constexpr Color suggested_foreground_color() const
@@ -599,25 +705,36 @@ public:
     }
 
 private:
-    constexpr explicit Color(ARGB32 argb)
-        : m_value(argb)
+    constexpr explicit Color(f32 r, f32 g, f32 b, f32 a, CSSColorFormat format)
+        : m_r(r)
+        , m_g(g)
+        , m_b(b)
+        , m_a(a)
+        , m_format(format)
     {
     }
 
-    ARGB32 m_value { 0 };
+    f32 m_r { 0 };
+    f32 m_g { 0 };
+    f32 m_b { 0 };
+    f32 m_a { 0 };
+    CSSColorFormat m_format { CSSColorFormat::RGB };
 };
 
 constexpr Color::Color(NamedColor named)
 {
     if (named == Transparent) {
-        m_value = 0;
+        m_r = 0;
+        m_g = 0;
+        m_b = 0;
+        m_a = 0;
         return;
     }
 
     struct {
-        u8 r;
-        u8 g;
-        u8 b;
+        f32 r;
+        f32 g;
+        f32 b;
     } rgb;
 
     switch (named) {
@@ -692,7 +809,10 @@ constexpr Color::Color(NamedColor named)
         break;
     }
 
-    m_value = 0xff000000 | (rgb.r << 16) | (rgb.g << 8) | rgb.b;
+    m_r = srgb_to_linear(rgb.r / 255.f);
+    m_g = srgb_to_linear(rgb.g / 255.f);
+    m_b = srgb_to_linear(rgb.b / 255.f);
+    m_a = 1.0f;
 }
 
 constexpr Color Color::branded_color(BrandedColor color)
@@ -751,7 +871,8 @@ class Traits<Color> : public DefaultTraits<Color> {
 public:
     static unsigned hash(Color const& color)
     {
-        return int_hash(color.value());
+        // TODO FIX
+        return int_hash(color.red());
     }
 };
 

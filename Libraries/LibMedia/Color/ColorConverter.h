@@ -147,7 +147,7 @@ public:
         u8 r = static_cast<u8>(color_vector.x() * 255.0f);
         u8 g = static_cast<u8>(color_vector.y() * 255.0f);
         u8 b = static_cast<u8>(color_vector.z() * 255.0f);
-        return Gfx::Color(r, g, b);
+        return Gfx::Color::from_rgb(r, g, b);
     }
 
     // Fast conversion of 8-bit YUV to full-range RGB.
@@ -240,7 +240,7 @@ public:
         green /= fraction(maximum_value, 255);
         blue /= fraction(maximum_value, 255);
 
-        return Gfx::Color(u8(red), u8(green), u8(blue));
+        return Gfx::Color::from_rgb(u8(red), u8(green), u8(blue));
     }
 
 private:

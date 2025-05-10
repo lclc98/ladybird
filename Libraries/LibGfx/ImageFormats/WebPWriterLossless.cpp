@@ -39,7 +39,7 @@ struct IsOpaque {
 NEVER_INLINE static ErrorOr<void> write_image_data(LittleEndianOutputBitStream& bit_stream, Bitmap const& bitmap, PrefixCodeGroup const& prefix_code_group)
 {
     // This is currently the hot loop. Keep performance in mind when you change it.
-    for (ARGB32 pixel : bitmap) {
+    for (u32 pixel : bitmap) {
         u8 a = pixel >> 24;
         u8 r = pixel >> 16;
         u8 g = pixel >> 8;
@@ -275,7 +275,7 @@ static ErrorOr<void> write_VP8L_coded_image(ImageKind image_kind, LittleEndianOu
     // FIXME: Consider using a meta-prefix image and using one prefix-code-group per tile.
 
     Array<Array<u16, 256>, 4> symbol_frequencies {};
-    for (ARGB32 pixel : bitmap) {
+    for (u32 pixel : bitmap) {
         static constexpr auto saturating_increment = [](u16& value) {
             if (value < UINT16_MAX)
                 value++;
@@ -322,25 +322,25 @@ static ErrorOr<void> write_VP8L_coded_image(ImageKind image_kind, LittleEndianOu
     return {};
 }
 
-static ARGB32 sub_argb32(ARGB32 a, ARGB32 b)
+static u32 sub_u32(u32 a, u32 b)
 {
     auto a_color = Color::from_argb(a);
     auto b_color = Color::from_argb(b);
-    return Color(a_color.red() - b_color.red(),
+    return Color::from_rgba(a_color.red() - b_color.red(),
         a_color.green() - b_color.green(),
         a_color.blue() - b_color.blue(),
         a_color.alpha() - b_color.alpha())
-        .value();
+        .to_rgba();
 }
 
 static ErrorOr<NonnullRefPtr<Bitmap const>> maybe_write_color_indexing_transform(LittleEndianOutputBitStream& bit_stream, NonnullRefPtr<Bitmap const> bitmap, IsOpaque& is_fully_opaque)
 {
     // https://developers.google.com/speed/webp/docs/webp_lossless_bitstream_specification#44_color_indexing_transform
     unsigned color_table_size = 0;
-    HashTable<ARGB32> seen_colors;
-    ARGB32 channels = 0;
-    ARGB32 first_pixel = bitmap->get_pixel(0, 0).value();
-    for (ARGB32 pixel : *bitmap) {
+    HashTable<u32> seen_colors;
+    u32 channels = 0;
+    u32 first_pixel = bitmap->get_pixel(0, 0).to_rgba();
+    for (u32 pixel : *bitmap) {
         auto result = seen_colors.set(pixel);
         if (result == HashSetResult::InsertedNewEntry) {
             ++color_table_size;
@@ -377,8 +377,8 @@ static ErrorOr<NonnullRefPtr<Bitmap const>> maybe_write_color_indexing_transform
     TRY(bit_stream.write_bits(color_table_size - 1, 8u));
 
     // Store color index to bit stream.
-    Vector<ARGB32, 256> colors;
-    for (ARGB32 color : seen_colors)
+    Vector<u32, 256> colors;
+    for (u32 color : seen_colors)
         colors.append(color);
     quick_sort(colors.begin(), colors.end());
 
@@ -387,11 +387,11 @@ static ErrorOr<NonnullRefPtr<Bitmap const>> maybe_write_color_indexing_transform
     auto color_index_bitmap = TRY(Bitmap::create(BitmapFormat::BGRA8888, { static_cast<int>(color_table_size), 1 }));
     color_index_bitmap->set_pixel(0, 0, Color::from_argb(colors[0]));
     for (unsigned i = 1; i < color_table_size; ++i)
-        color_index_bitmap->set_pixel(i, 0, Color::from_argb(sub_argb32(colors[i], colors[i - 1])));
+        color_index_bitmap->set_pixel(i, 0, Color::from_argb(sub_u32(colors[i], colors[i - 1])));
     TRY(write_VP8L_coded_image(ImageKind::EntropyCoded, bit_stream, *color_index_bitmap, is_fully_opaque));
 
     // Return a new bitmap with the color indexing transform applied.
-    HashMap<ARGB32, u8> color_index_map;
+    HashMap<u32, u8> color_index_map;
     for (unsigned i = 0; i < color_table_size; ++i)
         color_index_map.set(colors[i], i);
 
@@ -416,11 +416,11 @@ static ErrorOr<NonnullRefPtr<Bitmap const>> maybe_write_color_indexing_transform
             u8 indexes = 0;
             for (int i = 0; i < pixels_per_pixel && x + i < bitmap->width(); ++i) {
                 auto pixel = bitmap->get_pixel(x + i, y);
-                auto result = color_index_map.get(pixel.value());
+                auto result = color_index_map.get(pixel.to_rgba());
                 VERIFY(result.has_value());
                 indexes |= result.value() << (i * bits_per_pixel);
             }
-            new_bitmap->set_pixel(new_x, y, Color(0, indexes, 0, 0));
+            new_bitmap->set_pixel(new_x, y, Color::from_rgba(0, indexes, 0, 0));
         }
     }
 

@@ -152,13 +152,13 @@ ALWAYS_INLINE DecoderErrorOr<void> convert_to_bitmap_subsampled(Convert convert,
         auto* scan_line_a = bitmap.scanline(static_cast<int>(row));
 
         for (size_t column = 0; column < width; column++) {
-            scan_line_a[column] = convert(y_row_a[column], u_row_a[column], v_row_a[column]).value();
+            scan_line_a[column] = convert(y_row_a[column], u_row_a[column], v_row_a[column]).to_rgba();
         }
         if constexpr (subsampling_vertical != 0) {
             auto const* y_row_b = &plane_y[static_cast<size_t>(row + 1) * width];
             auto* scan_line_b = bitmap.scanline(static_cast<int>(row + 1));
             for (size_t column = 0; column < width; column++) {
-                scan_line_b[column] = convert(y_row_b[column], u_row_b[column], v_row_b[column]).value();
+                scan_line_b[column] = convert(y_row_b[column], u_row_b[column], v_row_b[column]).to_rgba();
             }
         }
 
@@ -172,7 +172,7 @@ ALWAYS_INLINE DecoderErrorOr<void> convert_to_bitmap_subsampled(Convert convert,
             auto const* y_row = &plane_y[static_cast<size_t>(height - 1) * width];
             auto* scan_line = bitmap.scanline(static_cast<int>(height - 1));
             for (size_t column = 0; column < width; column++) {
-                scan_line[column] = convert(y_row[column], u_row_a[column], v_row_a[column]).value();
+                scan_line[column] = convert(y_row[column], u_row_a[column], v_row_a[column]).to_rgba();
             }
         }
     }

@@ -88,18 +88,18 @@ public:
 
     [[nodiscard]] u8* scanline_u8(int physical_y);
     [[nodiscard]] u8 const* scanline_u8(int physical_y) const;
-    [[nodiscard]] ARGB32* scanline(int physical_y);
-    [[nodiscard]] ARGB32 const* scanline(int physical_y) const;
+    [[nodiscard]] u32* scanline(int physical_y);
+    [[nodiscard]] u32 const* scanline(int physical_y) const;
 
     [[nodiscard]] u8* unchecked_scanline_u8(int physical_y);
     [[nodiscard]] u8 const* unchecked_scanline_u8(int physical_y) const;
-    [[nodiscard]] ARGB32* unchecked_scanline(int physical_y);
-    [[nodiscard]] ARGB32 const* unchecked_scanline(int physical_y) const;
+    [[nodiscard]] u32* unchecked_scanline(int physical_y);
+    [[nodiscard]] u32 const* unchecked_scanline(int physical_y) const;
 
-    [[nodiscard]] ARGB32* begin();
-    [[nodiscard]] ARGB32 const* begin() const;
-    [[nodiscard]] ARGB32* end();
-    [[nodiscard]] ARGB32 const* end() const;
+    [[nodiscard]] u32* begin();
+    [[nodiscard]] u32 const* begin() const;
+    [[nodiscard]] u32* end();
+    [[nodiscard]] u32 const* end() const;
     [[nodiscard]] size_t data_size() const;
 
     [[nodiscard]] IntRect rect() const { return { {}, m_size }; }
@@ -168,14 +168,14 @@ ALWAYS_INLINE u8 const* Bitmap::unchecked_scanline_u8(int y) const
     return reinterpret_cast<u8 const*>(m_data) + (y * m_pitch);
 }
 
-ALWAYS_INLINE ARGB32* Bitmap::unchecked_scanline(int y)
+ALWAYS_INLINE u32* Bitmap::unchecked_scanline(int y)
 {
-    return reinterpret_cast<ARGB32*>(unchecked_scanline_u8(y));
+    return reinterpret_cast<u32*>(unchecked_scanline_u8(y));
 }
 
-ALWAYS_INLINE ARGB32 const* Bitmap::unchecked_scanline(int y) const
+ALWAYS_INLINE u32 const* Bitmap::unchecked_scanline(int y) const
 {
-    return reinterpret_cast<ARGB32 const*>(unchecked_scanline_u8(y));
+    return reinterpret_cast<u32 const*>(unchecked_scanline_u8(y));
 }
 
 ALWAYS_INLINE u8* Bitmap::scanline_u8(int y)
@@ -192,34 +192,34 @@ ALWAYS_INLINE u8 const* Bitmap::scanline_u8(int y) const
     return unchecked_scanline_u8(y);
 }
 
-ALWAYS_INLINE ARGB32* Bitmap::scanline(int y)
+ALWAYS_INLINE u32* Bitmap::scanline(int y)
 {
-    return reinterpret_cast<ARGB32*>(scanline_u8(y));
+    return reinterpret_cast<u32*>(scanline_u8(y));
 }
 
-ALWAYS_INLINE ARGB32 const* Bitmap::scanline(int y) const
+ALWAYS_INLINE u32 const* Bitmap::scanline(int y) const
 {
-    return reinterpret_cast<ARGB32 const*>(scanline_u8(y));
+    return reinterpret_cast<u32 const*>(scanline_u8(y));
 }
 
-ALWAYS_INLINE ARGB32* Bitmap::begin()
+ALWAYS_INLINE u32* Bitmap::begin()
 {
     return scanline(0);
 }
 
-ALWAYS_INLINE ARGB32 const* Bitmap::begin() const
+ALWAYS_INLINE u32 const* Bitmap::begin() const
 {
     return scanline(0);
 }
 
-ALWAYS_INLINE ARGB32* Bitmap::end()
+ALWAYS_INLINE u32* Bitmap::end()
 {
-    return reinterpret_cast<ARGB32*>(reinterpret_cast<u8*>(m_data) + data_size());
+    return reinterpret_cast<u32*>(reinterpret_cast<u8*>(m_data) + data_size());
 }
 
-ALWAYS_INLINE ARGB32 const* Bitmap::end() const
+ALWAYS_INLINE u32 const* Bitmap::end() const
 {
-    return reinterpret_cast<ARGB32 const*>(reinterpret_cast<u8 const*>(m_data) + data_size());
+    return reinterpret_cast<u32 const*>(reinterpret_cast<u8 const*>(m_data) + data_size());
 }
 
 ALWAYS_INLINE size_t Bitmap::data_size() const
@@ -253,11 +253,11 @@ ALWAYS_INLINE void Bitmap::set_pixel(int x, int y, Color color)
     VERIFY(x < width());
 
     if constexpr (storage_format == StorageFormat::BGRx8888 || storage_format == StorageFormat::BGRA8888) {
-        scanline(y)[x] = color.value();
+        scanline(y)[x] = color.to_rgba();
     } else if constexpr (storage_format == StorageFormat::RGBA8888) {
-        scanline(y)[x] = (color.alpha() << 24) | (color.blue() << 16) | (color.green() << 8) | color.red();
+        scanline(y)[x] = color.to_rgba();
     } else if constexpr (storage_format == StorageFormat::RGBx8888) {
-        scanline(y)[x] = (color.blue() << 16) | (color.green() << 8) | color.red();
+        scanline(y)[x] = color.to_rgb();
     } else {
         static_assert(false, "There's a new storage format not in Bitmap::set_pixel");
     }

@@ -37,13 +37,13 @@ String Color::to_string(HTMLCompatibleSerialization html_compatible_serializatio
     // NOTE: This is currently always true for Gfx::Color.
 
     // 4. HTML-compatible serialization is requested
-    if (alpha() == 255
+    if (alpha() == 1.0f
         && html_compatible_serialization == HTMLCompatibleSerialization::Yes) {
         return MUST(String::formatted("#{:02x}{:02x}{:02x}", red(), green(), blue()));
     }
 
     // Otherwise, for sRGB the CSS serialization of sRGB values is used and for other color spaces, the relevant serialization of the <color> value.
-    if (alpha() < 255)
+    if (alpha() < 1.0f)
         return MUST(String::formatted("rgba({}, {}, {}, {})", red(), green(), blue(), alpha() / 255.0));
     return MUST(String::formatted("rgb({}, {}, {})", red(), green(), blue()));
 }
@@ -81,7 +81,7 @@ static Optional<Color> parse_rgb_color(StringView string)
     if (!r.has_value() || !g.has_value() || !b.has_value())
         return {};
 
-    return Color(*r, *g, *b);
+    return Color::from_rgb(*r, *g, *b);
 }
 
 static Optional<Color> parse_rgba_color(StringView string)
@@ -111,7 +111,7 @@ static Optional<Color> parse_rgba_color(StringView string)
     if (!r.has_value() || !g.has_value() || !b.has_value() || a > 255)
         return {};
 
-    return Color(*r, *g, *b, a);
+    return Color::from_rgba(*r, *g, *b, a);
 }
 
 Optional<Color> Color::from_named_css_color_string(StringView string)
@@ -120,7 +120,7 @@ Optional<Color> Color::from_named_css_color_string(StringView string)
         return {};
 
     struct WebColor {
-        ARGB32 color;
+        u32 color;
         StringView name;
     };
 
@@ -312,7 +312,7 @@ static Optional<Color> hex_string_to_color(StringView string)
         Optional<u8> b = hex_nibble_to_u8(string[3]);
         if (!r.has_value() || !g.has_value() || !b.has_value())
             return {};
-        return Color(r.value() * 17, g.value() * 17, b.value() * 17);
+        return Color::from_rgb(r.value() * 17, g.value() * 17, b.value() * 17);
     }
 
     if (string.length() == 5) {
@@ -322,7 +322,7 @@ static Optional<Color> hex_string_to_color(StringView string)
         Optional<u8> a = hex_nibble_to_u8(string[4]);
         if (!r.has_value() || !g.has_value() || !b.has_value() || !a.has_value())
             return {};
-        return Color(r.value() * 17, g.value() * 17, b.value() * 17, a.value() * 17);
+        return Color::from_rgba(r.value() * 17, g.value() * 17, b.value() * 17, a.value() * 17);
     }
 
     if (string.length() != 7 && string.length() != 9)
@@ -344,7 +344,7 @@ static Optional<Color> hex_string_to_color(StringView string)
     if (!r.has_value() || !g.has_value() || !b.has_value() || !a.has_value())
         return {};
 
-    return Color(r.value(), g.value(), b.value(), a.value());
+    return Color::from_rgba(r.value(), g.value(), b.value(), a.value());
 }
 #endif
 
@@ -407,7 +407,7 @@ Color Color::from_linear_srgb(float red, float green, float blue, float alpha)
     green = linear_to_srgb(green) * 255.f;
     blue = linear_to_srgb(blue) * 255.f;
 
-    return Color(
+    return Color::from_rgba(
         clamp(lroundf(red), 0, 255),
         clamp(lroundf(green), 0, 255),
         clamp(lroundf(blue), 0, 255),
@@ -554,7 +554,8 @@ Color Color::from_lab(float L, float a, float b, float alpha)
 template<>
 ErrorOr<void> IPC::encode(Encoder& encoder, Color const& color)
 {
-    return encoder.encode(color.value());
+    // TODO Come back and fix
+    return encoder.encode(color.red());
 }
 
 template<>

@@ -159,7 +159,7 @@ Color ColorFunctionStyleValue::to_color(Optional<Layout::NodeWithStyle const&>) 
 
     if (color_type() == ColorType::sRGB) {
         auto const to_u8 = [](float c) -> u8 { return round_to<u8>(clamp(255 * c, 0, 255)); };
-        return Color(to_u8(c1), to_u8(c2), to_u8(c3), to_u8(alpha_val));
+        return Color::from_rgba(to_u8(c1), to_u8(c2), to_u8(c3), to_u8(alpha_val));
     }
 
     if (color_type() == ColorType::sRGBLinear)

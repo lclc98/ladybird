@@ -198,7 +198,7 @@ Bitmap::~Bitmap()
 void Bitmap::strip_alpha_channel()
 {
     VERIFY(m_format == BitmapFormat::BGRA8888 || m_format == BitmapFormat::BGRx8888);
-    for (ARGB32& pixel : *this)
+    for (u32& pixel : *this)
         pixel = 0xff000000 | (pixel & 0xffffff);
     m_format = BitmapFormat::BGRx8888;
 }

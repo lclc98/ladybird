@@ -402,7 +402,7 @@ static void show_the_picker_if_applicable(HTMLInputElement& element)
         if (element.type_state() == HTMLInputElement::TypeAttributeState::Color) {
             auto weak_element = element.make_weak_ptr<HTMLInputElement>();
             element.set_is_open(true);
-            element.document().browsing_context()->top_level_browsing_context()->page().did_request_color_picker(weak_element, Color::from_string(element.value()).value_or(Color(0, 0, 0)));
+            element.document().browsing_context()->top_level_browsing_context()->page().did_request_color_picker(weak_element, Color::from_string(element.value()).value_or(Color::from_rgb(0, 0, 0)));
         }
     }
 }

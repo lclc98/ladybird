@@ -1106,7 +1106,7 @@ void CanvasRenderingContext2D::set_filter(String filter)
                         radius = static_cast<float>(drop_shadow.radius->resolved(calculation_context).value_or(zero_px).to_px(resolution_context));
                     };
 
-                    auto color = drop_shadow.color.value_or(Gfx::Color { 0, 0, 0, 255 });
+                    auto color = drop_shadow.color.value_or(Gfx::Color::from_rgba(0, 0, 0, 255));
 
                     drawing_state().filters.append(Gfx::DropShadowFilter { offset_x, offset_y, radius, color });
                 });

@@ -49,7 +49,7 @@ void Palette::set_color(ColorRole role, Color color)
     if (m_impl->ref_count() != 1)
         m_impl = m_impl->clone();
     auto& theme = const_cast<SystemTheme&>(impl().theme());
-    theme.color[(int)role] = color.value();
+    theme.color[(int)role] = color.to_rgba();
 }
 
 void Palette::set_alignment(AlignmentRole role, Gfx::TextAlignment value)

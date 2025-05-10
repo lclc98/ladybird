@@ -234,7 +234,7 @@ ErrorOr<void> PNGLoadingContext::apply_exif_orientation()
         for (int y = 0; y < img->size().height(); ++y) {
             for (int x = 0; x < img->size().width(); ++x) {
                 auto pixel = img->get_pixel(x, y);
-                oriented_bmp.set_pixel(x, y, pixel.value());
+                oriented_bmp.set_pixel(x, y, pixel.to_rgba());
             }
         }
 

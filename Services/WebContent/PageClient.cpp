@@ -112,8 +112,8 @@ void PageClient::setup_palette()
     VERIFY(!buffer_or_error.is_error());
     auto buffer = buffer_or_error.release_value();
     auto* theme = buffer.data<Gfx::SystemTheme>();
-    theme->color[to_underlying(Gfx::ColorRole::Window)] = Color(Color::Magenta).value();
-    theme->color[to_underlying(Gfx::ColorRole::WindowText)] = Color(Color::Cyan).value();
+    theme->color[to_underlying(Gfx::ColorRole::Window)] = Color(Color::Magenta).to_rgb();
+    theme->color[to_underlying(Gfx::ColorRole::WindowText)] = Color(Color::Cyan).to_rgb();
     m_palette_impl = Gfx::PaletteImpl::create_with_anonymous_buffer(buffer);
 }
 

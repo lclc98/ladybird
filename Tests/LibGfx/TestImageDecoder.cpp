@@ -128,7 +128,7 @@ TEST_CASE(test_cur)
     auto plugin_decoder = TRY_OR_FAIL(Gfx::ICOImageDecoderPlugin::create(file->bytes()));
 
     auto frame = TRY_OR_FAIL(expect_single_frame_of_size(*plugin_decoder, { 32, 32 }));
-    EXPECT_EQ(frame.image->get_pixel(0, 0), Gfx::Color(0, 0, 0, 0));
+    EXPECT_EQ(frame.image->get_pixel(0, 0), Gfx::Color::from_rgba(0, 0, 0, 0));
     EXPECT_EQ(frame.image->get_pixel(2, 2), Gfx::Color::NamedColor::Black);
     EXPECT_EQ(frame.image->get_pixel(8, 8), Gfx::Color::NamedColor::White);
 }
@@ -231,7 +231,7 @@ TEST_CASE(test_bmp_embedded_in_ico)
 
     auto frame = TRY_OR_FAIL(expect_single_frame_of_size(*plugin_decoder, { 16, 16 }));
     EXPECT_EQ(frame.image->get_pixel(0, 0), Gfx::Color::NamedColor::Transparent);
-    EXPECT_EQ(frame.image->get_pixel(7, 4), Gfx::Color(161, 0, 0));
+    EXPECT_EQ(frame.image->get_pixel(7, 4), Gfx::Color::from_rgb(161, 0, 0));
 }
 
 TEST_CASE(test_24bit_bmp_embedded_in_ico)
@@ -241,8 +241,8 @@ TEST_CASE(test_24bit_bmp_embedded_in_ico)
     auto plugin_decoder = TRY_OR_FAIL(Gfx::ICOImageDecoderPlugin::create(file->bytes()));
 
     auto frame = TRY_OR_FAIL(expect_single_frame_of_size(*plugin_decoder, { 16, 16 }));
-    EXPECT_EQ(frame.image->get_pixel(14, 14), Gfx::Color(234, 0, 0));
-    EXPECT_EQ(frame.image->get_pixel(13, 15), Gfx::Color(255, 10, 15));
+    EXPECT_EQ(frame.image->get_pixel(14, 14), Gfx::Color::from_rgb(234, 0, 0));
+    EXPECT_EQ(frame.image->get_pixel(13, 15), Gfx::Color::from_rgb(255, 10, 15));
 }
 
 TEST_CASE(test_malformed_maskless_ico)
@@ -253,7 +253,7 @@ TEST_CASE(test_malformed_maskless_ico)
 
     auto frame = TRY_OR_FAIL(expect_single_frame_of_size(*plugin_decoder, { 16, 16 }));
     EXPECT_EQ(frame.image->get_pixel(0, 0), Gfx::Color::NamedColor::Transparent);
-    EXPECT_EQ(frame.image->get_pixel(7, 4), Gfx::Color(161, 0, 0));
+    EXPECT_EQ(frame.image->get_pixel(7, 4), Gfx::Color::from_rgb(161, 0, 0));
 }
 
 TEST_CASE(test_jpeg_sof0_one_scan)
@@ -417,7 +417,7 @@ TEST_CASE(test_apng)
     auto frame = TRY_OR_FAIL(plugin_decoder->frame(0));
 
     EXPECT_EQ(frame.duration, 1000);
-    EXPECT_EQ(frame.image->get_pixel(64, 32), Gfx::Color(117, 252, 76));
+    EXPECT_EQ(frame.image->get_pixel(64, 32), Gfx::Color::from_rgb(117, 252, 76));
     EXPECT_EQ(frame.image->size(), Gfx::IntSize(128, 64));
 }
 
@@ -448,8 +448,8 @@ TEST_CASE(test_exif)
     auto const& exif_metadata = static_cast<Gfx::ExifMetadata const&>(plugin_decoder->metadata().value());
     EXPECT_EQ(*exif_metadata.orientation(), Gfx::TIFF::Orientation::Rotate90Clockwise);
 
-    EXPECT_EQ(frame.image->get_pixel(65, 70), Gfx::Color(0, 255, 0));
-    EXPECT_EQ(frame.image->get_pixel(190, 10), Gfx::Color(255, 0, 0));
+    EXPECT_EQ(frame.image->get_pixel(65, 70), Gfx::Color::from_rgb(0, 255, 0));
+    EXPECT_EQ(frame.image->get_pixel(190, 10), Gfx::Color::from_rgb(255, 0, 0));
 }
 
 TEST_CASE(test_png_malformed_frame)
@@ -640,7 +640,7 @@ TEST_CASE(test_tiff_grayscale)
     auto frame = TRY_OR_FAIL(expect_single_frame_of_size(*plugin_decoder, { 400, 300 }));
 
     EXPECT_EQ(frame.image->get_pixel(0, 0), Gfx::Color::NamedColor::White);
-    EXPECT_EQ(frame.image->get_pixel(60, 75), Gfx::Color(130, 130, 130));
+    EXPECT_EQ(frame.image->get_pixel(60, 75), Gfx::Color::from_rgb(130, 130, 130));
 }
 
 TEST_CASE(test_tiff_grayscale_alpha)
@@ -652,7 +652,7 @@ TEST_CASE(test_tiff_grayscale_alpha)
     auto frame = TRY_OR_FAIL(expect_single_frame_of_size(*plugin_decoder, { 400, 300 }));
 
     EXPECT_EQ(frame.image->get_pixel(0, 0).alpha(), 0);
-    EXPECT_EQ(frame.image->get_pixel(60, 75), Gfx::Color(130, 130, 130));
+    EXPECT_EQ(frame.image->get_pixel(60, 75), Gfx::Color::from_rgb(130, 130, 130));
 }
 
 TEST_CASE(test_tiff_rgb_alpha)
@@ -750,8 +750,8 @@ TEST_CASE(test_webp_simple_lossy)
 
     // While VP8 YUV contents are defined bit-exact, the YUV->RGB conversion isn't.
     // So pixels changing by 1 or so below is fine if you change code.
-    EXPECT_EQ(frame.image->get_pixel(120, 232), Gfx::Color(0xf1, 0xef, 0xf0, 255));
-    EXPECT_EQ(frame.image->get_pixel(198, 202), Gfx::Color(0x7a, 0xaa, 0xd5, 255));
+    EXPECT_EQ(frame.image->get_pixel(120, 232), Gfx::Color::from_rgba(0xf1, 0xef, 0xf0, 255));
+    EXPECT_EQ(frame.image->get_pixel(198, 202), Gfx::Color::from_rgba(0x7a, 0xaa, 0xd5, 255));
 }
 
 TEST_CASE(test_webp_simple_lossless)
@@ -767,10 +767,10 @@ TEST_CASE(test_webp_simple_lossless)
     // and handling of canonical codes with more than 288 elements.
     // This image uses all 13 predictor modes of the predictor transform.
     auto frame = TRY_OR_FAIL(expect_single_frame_of_size(*plugin_decoder, { 386, 395 }));
-    EXPECT_EQ(frame.image->get_pixel(0, 0), Gfx::Color(0, 0, 0, 0));
+    EXPECT_EQ(frame.image->get_pixel(0, 0), Gfx::Color::from_rgba(0, 0, 0, 0));
 
     // This pixel tests all predictor modes except 5, 7, 8, 9, and 13.
-    EXPECT_EQ(frame.image->get_pixel(289, 332), Gfx::Color(0xf2, 0xee, 0xd3, 255));
+    EXPECT_EQ(frame.image->get_pixel(289, 332), Gfx::Color::from_rgba(0xf2, 0xee, 0xd3, 255));
 }
 
 TEST_CASE(test_webp_simple_lossless_alpha_used_false)
@@ -782,7 +782,7 @@ TEST_CASE(test_webp_simple_lossless_alpha_used_false)
     auto plugin_decoder = TRY_OR_FAIL(Gfx::WebPImageDecoderPlugin::create(file->bytes()));
 
     auto frame = TRY_OR_FAIL(expect_single_frame_of_size(*plugin_decoder, { 386, 395 }));
-    EXPECT_EQ(frame.image->get_pixel(0, 0), Gfx::Color(0, 0, 0, 0xff));
+    EXPECT_EQ(frame.image->get_pixel(0, 0), Gfx::Color::from_rgba(0, 0, 0, 0xff));
 }
 
 TEST_CASE(test_webp_extended_lossy)
@@ -796,19 +796,19 @@ TEST_CASE(test_webp_extended_lossy)
 
     // While VP8 YUV contents are defined bit-exact, the YUV->RGB conversion isn't.
     // So pixels changing by 1 or so below is fine if you change code.
-    EXPECT_EQ(frame.image->get_pixel(89, 72), Gfx::Color(255, 1, 0, 255));
-    EXPECT_EQ(frame.image->get_pixel(174, 69), Gfx::Color(0, 255, 0, 255));
-    EXPECT_EQ(frame.image->get_pixel(245, 84), Gfx::Color(0, 0, 255, 255));
-    EXPECT_EQ(frame.image->get_pixel(352, 125), Gfx::Color(0, 0, 0, 128));
-    EXPECT_EQ(frame.image->get_pixel(355, 106), Gfx::Color(0, 0, 0, 0));
+    EXPECT_EQ(frame.image->get_pixel(89, 72), Gfx::Color::from_rgba(255, 1, 0, 255));
+    EXPECT_EQ(frame.image->get_pixel(174, 69), Gfx::Color::from_rgba(0, 255, 0, 255));
+    EXPECT_EQ(frame.image->get_pixel(245, 84), Gfx::Color::from_rgba(0, 0, 255, 255));
+    EXPECT_EQ(frame.image->get_pixel(352, 125), Gfx::Color::from_rgba(0, 0, 0, 128));
+    EXPECT_EQ(frame.image->get_pixel(355, 106), Gfx::Color::from_rgba(0, 0, 0, 0));
 
     // Check same basic pixels as in test_webp_extended_lossless too.
     // (The top-left pixel in the lossy version is fully transparent white, compared to fully transparent black in the lossless version).
-    EXPECT_EQ(frame.image->get_pixel(0, 0), Gfx::Color(255, 255, 255, 0));
-    EXPECT_EQ(frame.image->get_pixel(43, 75), Gfx::Color(255, 0, 2, 255));
-    EXPECT_EQ(frame.image->get_pixel(141, 75), Gfx::Color(0, 255, 3, 255));
-    EXPECT_EQ(frame.image->get_pixel(235, 75), Gfx::Color(0, 0, 255, 255));
-    EXPECT_EQ(frame.image->get_pixel(341, 75), Gfx::Color(0, 0, 0, 128));
+    EXPECT_EQ(frame.image->get_pixel(0, 0), Gfx::Color::from_rgba(255, 255, 255, 0));
+    EXPECT_EQ(frame.image->get_pixel(43, 75), Gfx::Color::from_rgba(255, 0, 2, 255));
+    EXPECT_EQ(frame.image->get_pixel(141, 75), Gfx::Color::from_rgba(0, 255, 3, 255));
+    EXPECT_EQ(frame.image->get_pixel(235, 75), Gfx::Color::from_rgba(0, 0, 255, 255));
+    EXPECT_EQ(frame.image->get_pixel(341, 75), Gfx::Color::from_rgba(0, 0, 0, 128));
 }
 
 TEST_CASE(test_webp_extended_lossy_alpha_horizontal_filter)
@@ -824,7 +824,7 @@ TEST_CASE(test_webp_extended_lossy_alpha_horizontal_filter)
     // While VP8 YUV contents are defined bit-exact, the YUV->RGB conversion isn't.
     // So pixels changing by 1 or so below is fine if you change code.
     // The important component in this test is alpha, and that shouldn't change even by 1 as it's losslessly compressed and doesn't use YUV.
-    EXPECT_EQ(frame.image->get_pixel(131, 131), Gfx::Color(0x8f, 0x50, 0x33, 0x4b));
+    EXPECT_EQ(frame.image->get_pixel(131, 131), Gfx::Color::from_rgba(0x8f, 0x50, 0x33, 0x4b));
 }
 
 TEST_CASE(test_webp_extended_lossy_alpha_vertical_filter)
@@ -840,7 +840,7 @@ TEST_CASE(test_webp_extended_lossy_alpha_vertical_filter)
     // While VP8 YUV contents are defined bit-exact, the YUV->RGB conversion isn't.
     // So pixels changing by 1 or so below is fine if you change code.
     // The important component in this test is alpha, and that shouldn't change even by 1 as it's losslessly compressed and doesn't use YUV.
-    EXPECT_EQ(frame.image->get_pixel(131, 131), Gfx::Color(0x92, 0x50, 0x32, 0x4c));
+    EXPECT_EQ(frame.image->get_pixel(131, 131), Gfx::Color::from_rgba(0x92, 0x50, 0x32, 0x4c));
 }
 
 TEST_CASE(test_webp_extended_lossy_alpha_gradient_filter)
@@ -857,7 +857,7 @@ TEST_CASE(test_webp_extended_lossy_alpha_gradient_filter)
     // So pixels changing by 1 or so below is fine if you change code.
     // The important component in this test is alpha, and that shouldn't change even by 1 as it's losslessly compressed and doesn't use YUV.
     // In particular, the center of the image should be fully opaque, not fully transparent.
-    EXPECT_EQ(frame.image->get_pixel(131, 131), Gfx::Color(0x8a, 0x48, 0x2e, 255));
+    EXPECT_EQ(frame.image->get_pixel(131, 131), Gfx::Color::from_rgba(0x8a, 0x48, 0x2e, 255));
 }
 
 TEST_CASE(test_webp_extended_lossy_uncompressed_alpha)
@@ -870,11 +870,11 @@ TEST_CASE(test_webp_extended_lossy_uncompressed_alpha)
 
     // While VP8 YUV contents are defined bit-exact, the YUV->RGB conversion isn't.
     // So pixels changing by 1 or so below is fine if you change code.
-    EXPECT_EQ(frame.image->get_pixel(89, 72), Gfx::Color(254, 0, 6, 255));
-    EXPECT_EQ(frame.image->get_pixel(174, 69), Gfx::Color(0, 255, 0, 255));
-    EXPECT_EQ(frame.image->get_pixel(245, 84), Gfx::Color(0, 0, 255, 255));
-    EXPECT_EQ(frame.image->get_pixel(352, 125), Gfx::Color(0, 0, 0, 128));
-    EXPECT_EQ(frame.image->get_pixel(355, 106), Gfx::Color(0, 0, 0, 0));
+    EXPECT_EQ(frame.image->get_pixel(89, 72), Gfx::Color::from_rgba(254, 0, 6, 255));
+    EXPECT_EQ(frame.image->get_pixel(174, 69), Gfx::Color::from_rgba(0, 255, 0, 255));
+    EXPECT_EQ(frame.image->get_pixel(245, 84), Gfx::Color::from_rgba(0, 0, 255, 255));
+    EXPECT_EQ(frame.image->get_pixel(352, 125), Gfx::Color::from_rgba(0, 0, 0, 128));
+    EXPECT_EQ(frame.image->get_pixel(355, 106), Gfx::Color::from_rgba(0, 0, 0, 0));
 }
 
 TEST_CASE(test_webp_extended_lossy_negative_quantization_offset)
@@ -887,7 +887,7 @@ TEST_CASE(test_webp_extended_lossy_negative_quantization_offset)
 
     // While VP8 YUV contents are defined bit-exact, the YUV->RGB conversion isn't.
     // So pixels changing by 1 or so below is fine if you change code.
-    EXPECT_EQ(frame.image->get_pixel(16, 16), Gfx::Color(0x3b, 0x25, 0x18, 255));
+    EXPECT_EQ(frame.image->get_pixel(16, 16), Gfx::Color::from_rgba(0x3b, 0x25, 0x18, 255));
 }
 
 TEST_CASE(test_webp_lossy_4)
@@ -903,7 +903,7 @@ TEST_CASE(test_webp_lossy_4)
     auto frame = TRY_OR_FAIL(expect_single_frame_of_size(*plugin_decoder, { 1024, 772 }));
 
     // This image tests macroblocks that have `skip_coefficients` set to true, and it test a boolean entropy decoder edge case.
-    EXPECT_EQ(frame.image->get_pixel(780, 570), Gfx::Color(0x72, 0xc8, 0xf6, 255));
+    EXPECT_EQ(frame.image->get_pixel(780, 570), Gfx::Color::from_rgba(0x72, 0xc8, 0xf6, 255));
 }
 
 TEST_CASE(test_webp_lossy_4_with_partitions)
@@ -914,7 +914,7 @@ TEST_CASE(test_webp_lossy_4_with_partitions)
     auto plugin_decoder = TRY_OR_FAIL(Gfx::WebPImageDecoderPlugin::create(file->bytes()));
 
     auto frame = TRY_OR_FAIL(expect_single_frame_of_size(*plugin_decoder, { 1024, 772 }));
-    EXPECT_EQ(frame.image->get_pixel(780, 570), Gfx::Color(0x72, 0xc7, 0xf8, 255));
+    EXPECT_EQ(frame.image->get_pixel(780, 570), Gfx::Color::from_rgba(0x72, 0xc7, 0xf8, 255));
 }
 
 TEST_CASE(test_webp_extended_lossless)
@@ -926,17 +926,17 @@ TEST_CASE(test_webp_extended_lossless)
     auto frame = TRY_OR_FAIL(expect_single_frame_of_size(*plugin_decoder, { 417, 223 }));
 
     // Check some basic pixels.
-    EXPECT_EQ(frame.image->get_pixel(0, 0), Gfx::Color(0, 0, 0, 0));
-    EXPECT_EQ(frame.image->get_pixel(43, 75), Gfx::Color(255, 0, 0, 255));
-    EXPECT_EQ(frame.image->get_pixel(141, 75), Gfx::Color(0, 255, 0, 255));
-    EXPECT_EQ(frame.image->get_pixel(235, 75), Gfx::Color(0, 0, 255, 255));
-    EXPECT_EQ(frame.image->get_pixel(341, 75), Gfx::Color(0, 0, 0, 128));
+    EXPECT_EQ(frame.image->get_pixel(0, 0), Gfx::Color::from_rgba(0, 0, 0, 0));
+    EXPECT_EQ(frame.image->get_pixel(43, 75), Gfx::Color::from_rgba(255, 0, 0, 255));
+    EXPECT_EQ(frame.image->get_pixel(141, 75), Gfx::Color::from_rgba(0, 255, 0, 255));
+    EXPECT_EQ(frame.image->get_pixel(235, 75), Gfx::Color::from_rgba(0, 0, 255, 255));
+    EXPECT_EQ(frame.image->get_pixel(341, 75), Gfx::Color::from_rgba(0, 0, 0, 128));
 
     // Check pixels using the color cache.
-    EXPECT_EQ(frame.image->get_pixel(94, 73), Gfx::Color(255, 0, 0, 255));
-    EXPECT_EQ(frame.image->get_pixel(176, 115), Gfx::Color(0, 255, 0, 255));
-    EXPECT_EQ(frame.image->get_pixel(290, 89), Gfx::Color(0, 0, 255, 255));
-    EXPECT_EQ(frame.image->get_pixel(359, 73), Gfx::Color(0, 0, 0, 128));
+    EXPECT_EQ(frame.image->get_pixel(94, 73), Gfx::Color::from_rgba(255, 0, 0, 255));
+    EXPECT_EQ(frame.image->get_pixel(176, 115), Gfx::Color::from_rgba(0, 255, 0, 255));
+    EXPECT_EQ(frame.image->get_pixel(290, 89), Gfx::Color::from_rgba(0, 0, 255, 255));
+    EXPECT_EQ(frame.image->get_pixel(359, 73), Gfx::Color::from_rgba(0, 0, 0, 128));
 }
 
 TEST_CASE(test_webp_simple_lossless_color_index_transform)
@@ -948,7 +948,7 @@ TEST_CASE(test_webp_simple_lossless_color_index_transform)
 
     auto frame = TRY_OR_FAIL(expect_single_frame_of_size(*plugin_decoder, { 256, 256 }));
 
-    EXPECT_EQ(frame.image->get_pixel(100, 100), Gfx::Color(0x73, 0x37, 0x23, 0xff));
+    EXPECT_EQ(frame.image->get_pixel(100, 100), Gfx::Color::from_rgba(0x73, 0x37, 0x23, 0xff));
 }
 
 TEST_CASE(test_webp_simple_lossless_color_index_transform_pixel_bundling)
@@ -966,11 +966,11 @@ TEST_CASE(test_webp_simple_lossless_color_index_transform_pixel_bundling)
     // catdog-alert-13-alpha-used-false is like catdog-alert-13, but with is_alpha_used set to false in the header
     // (which has the effect of ignoring the alpha information in the palette and instead always setting alpha to 0xff).
     TestCase test_cases[] = {
-        { "webp/catdog-alert-2.webp"sv, Gfx::Color(0x35, 0x12, 0x0a, 0xff), Gfx::Color(0xf3, 0xe6, 0xd8, 0xff) },
-        { "webp/catdog-alert-3.webp"sv, Gfx::Color(0x35, 0x12, 0x0a, 0xff), Gfx::Color(0, 0, 0, 0) },
-        { "webp/catdog-alert-8.webp"sv, Gfx::Color(0, 0, 0, 255), Gfx::Color(0, 0, 0, 0) },
-        { "webp/catdog-alert-13.webp"sv, Gfx::Color(0, 0, 0, 255), Gfx::Color(0, 0, 0, 0) },
-        { "webp/catdog-alert-13-alpha-used-false.webp"sv, Gfx::Color(0, 0, 0, 255), Gfx::Color(0, 0, 0, 255) },
+        { "webp/catdog-alert-2.webp"sv, Gfx::Color::from_rgba(0x35, 0x12, 0x0a, 0xff), Gfx::Color::from_rgba(0xf3, 0xe6, 0xd8, 0xff) },
+        { "webp/catdog-alert-3.webp"sv, Gfx::Color::from_rgba(0x35, 0x12, 0x0a, 0xff), Gfx::Color::from_rgba(0, 0, 0, 0) },
+        { "webp/catdog-alert-8.webp"sv, Gfx::Color::from_rgba(0, 0, 0, 255), Gfx::Color::from_rgba(0, 0, 0, 0) },
+        { "webp/catdog-alert-13.webp"sv, Gfx::Color::from_rgba(0, 0, 0, 255), Gfx::Color::from_rgba(0, 0, 0, 0) },
+        { "webp/catdog-alert-13-alpha-used-false.webp"sv, Gfx::Color::from_rgba(0, 0, 0, 255), Gfx::Color::from_rgba(0, 0, 0, 255) },
     };
 
     for (auto test_case : test_cases) {
@@ -1024,7 +1024,7 @@ TEST_CASE(test_webp_extended_lossless_animated)
         EXPECT_EQ(frame.image->get_pixel(500, 700), Gfx::Color::Yellow);
 
         // This one isn't the same in all frames.
-        EXPECT_EQ(frame.image->get_pixel(500, 0), (frame_index == 2 || frame_index == 6) ? Gfx::Color::Black : Gfx::Color(0, 0, 0, 0));
+        EXPECT_EQ(frame.image->get_pixel(500, 0), (frame_index == 2 || frame_index == 6) ? Gfx::Color::Black : Gfx::Color::from_rgba(0, 0, 0, 0));
     }
 }
 
@@ -1038,7 +1038,7 @@ TEST_CASE(test_webp_unpremultiplied_alpha)
 
     // Webp decodes with unpremultiplied color data, so {R,G,B} can be >A (unlike with premultiplied colors).
     EXPECT_EQ(frame.image->alpha_type(), Gfx::AlphaType::Unpremultiplied);
-    EXPECT_EQ(frame.image->get_pixel(0, 0), Gfx::Color(255, 255, 255, 128));
+    EXPECT_EQ(frame.image->get_pixel(0, 0), Gfx::Color::from_rgba(255, 255, 255, 128));
 }
 
 TEST_CASE(test_tvg)
@@ -1088,7 +1088,7 @@ TEST_CASE(test_tvg_rgb565)
     auto frame = TRY_OR_FAIL(expect_single_frame_of_size(*plugin_decoder, { 100, 100 }));
 
     // Should be a solid dark green:
-    EXPECT_EQ(frame.image->get_pixel(50, 50), Gfx::Color(0, 130, 0));
+    EXPECT_EQ(frame.image->get_pixel(50, 50), Gfx::Color::from_rgb(0, 130, 0));
 }
 
 TEST_CASE(test_jxl_modular_simple_tree_upsample2_10bits)
@@ -1112,8 +1112,8 @@ TEST_CASE(test_avif_simple_lossy)
 
     // While AVIF YUV contents are defined bit-exact, the YUV->RGB conversion isn't.
     // So pixels changing by 1 or so below is fine if you change code.
-    EXPECT_EQ(frame.image->get_pixel(120, 232), Gfx::Color(0xf1, 0xef, 0xf0, 255));
-    EXPECT_EQ(frame.image->get_pixel(198, 202), Gfx::Color(0x7b, 0xaa, 0xd6, 255));
+    EXPECT_EQ(frame.image->get_pixel(120, 232), Gfx::Color::from_rgba(0xf1, 0xef, 0xf0, 255));
+    EXPECT_EQ(frame.image->get_pixel(198, 202), Gfx::Color::from_rgba(0x7b, 0xaa, 0xd6, 255));
 }
 
 TEST_CASE(test_avif_simple_lossless)
@@ -1123,8 +1123,8 @@ TEST_CASE(test_avif_simple_lossless)
     auto plugin_decoder = TRY_OR_FAIL(Gfx::AVIFImageDecoderPlugin::create(file->bytes()));
 
     auto frame = TRY_OR_FAIL(expect_single_frame_of_size(*plugin_decoder, { 386, 395 }));
-    EXPECT_EQ(frame.image->get_pixel(0, 0), Gfx::Color(0, 0, 0, 0));
-    EXPECT_EQ(frame.image->get_pixel(289, 332), Gfx::Color(0xf2, 0xee, 0xd3, 255));
+    EXPECT_EQ(frame.image->get_pixel(0, 0), Gfx::Color::from_rgba(0, 0, 0, 0));
+    EXPECT_EQ(frame.image->get_pixel(289, 332), Gfx::Color::from_rgba(0xf2, 0xee, 0xd3, 255));
 }
 
 TEST_CASE(test_avif_simple_lossy_bitdepth10)

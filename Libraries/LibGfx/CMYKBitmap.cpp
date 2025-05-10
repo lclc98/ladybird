@@ -30,7 +30,7 @@ ErrorOr<RefPtr<Bitmap>> CMYKBitmap::to_low_quality_rgb() const
             for (int x = 0; x < m_size.width(); ++x) {
                 auto const& cmyk = scanline(y)[x];
                 u8 k = 255 - cmyk.k;
-                m_rgb_bitmap->scanline(y)[x] = Color((255 - cmyk.c) * k / 255, (255 - cmyk.m) * k / 255, (255 - cmyk.y) * k / 255).value();
+                m_rgb_bitmap->scanline(y)[x] = Color::from_rgb((255 - cmyk.c) * k / 255, (255 - cmyk.m) * k / 255, (255 - cmyk.y) * k / 255).to_rgba();
             }
         }
     }

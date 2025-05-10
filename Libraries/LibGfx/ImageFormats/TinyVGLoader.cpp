@@ -139,21 +139,21 @@ static ErrorOr<Vector<Color>> decode_color_table(Stream& stream, ColorEncoding e
         case ColorEncoding::RGBA8888: {
             Array<u8, 4> rgba;
             TRY(stream.read_until_filled(rgba));
-            return Color(rgba[0], rgba[1], rgba[2], rgba[3]);
+            return Color::from_rgba(rgba[0], rgba[1], rgba[2], rgba[3]);
         }
         case ColorEncoding::RGB565: {
             u16 color = TRY(stream.read_value<LittleEndian<u16>>());
             auto red = (color >> (6 + 5)) & 0x1f;
             auto green = (color >> 5) & 0x3f;
             auto blue = (color >> 0) & 0x1f;
-            return Color((red * 255 + 15) / 31, (green * 255 + 31) / 63, (blue * 255 + 15) / 31);
+            return Color::from_rgb((red * 255 + 15) / 31, (green * 255 + 31) / 63, (blue * 255 + 15) / 31);
         }
         case ColorEncoding::RGBAF32: {
             auto red = TRY(stream.read_value<LittleEndian<f32>>());
             auto green = TRY(stream.read_value<LittleEndian<f32>>());
             auto blue = TRY(stream.read_value<LittleEndian<f32>>());
             auto alpha = TRY(stream.read_value<LittleEndian<f32>>());
-            return Color(
+            return Color::from_rgba(
                 clamp(red * 255.0f, 0.0f, 255.0f),
                 clamp(green * 255.0f, 0.0f, 255.0f),
                 clamp(blue * 255.0f, 0.0f, 255.0f),

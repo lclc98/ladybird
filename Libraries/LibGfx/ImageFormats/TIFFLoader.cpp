@@ -259,7 +259,7 @@ private:
             auto const third_component = TRY(read_component(stream, m_bits_per_sample[2]));
 
             auto const alpha = TRY(manage_extra_channels(stream));
-            return Color(first_component, second_component, third_component, alpha);
+            return Color::from_rgba(first_component, second_component, third_component, alpha);
         }
 
         if (m_photometric_interpretation == PhotometricInterpretation::RGBPalette) {
@@ -281,7 +281,7 @@ private:
                 return Error::from_string_literal("TIFFImageDecoderPlugin: Color index is out of range");
 
             // FIXME: ColorMap's values are always 16-bits, stop truncating them when we support 16 bits bitmaps
-            return Color(
+            return Color::from_rgba(
                 color_map[red_offset + index] >> 8,
                 color_map[green_offset + index] >> 8,
                 color_map[blue_offset + index] >> 8,
@@ -296,7 +296,7 @@ private:
                 luminosity = ~luminosity;
 
             auto const alpha = TRY(manage_extra_channels(stream));
-            return Color(luminosity, luminosity, luminosity, alpha);
+            return Color::from_rgba(luminosity, luminosity, luminosity, alpha);
         }
 
         return Error::from_string_literal("Unsupported value for PhotometricInterpretation");
@@ -375,7 +375,7 @@ private:
                         last_color = color;
                         if (image_column >= m_image_width)
                             continue;
-                        oriented_bitmap.get<ExifOrientedBitmap>().set_pixel(image_column, image_row, color.value());
+                        oriented_bitmap.get<ExifOrientedBitmap>().set_pixel(image_column, image_row, color.to_rgba());
                     }
                 }
 
